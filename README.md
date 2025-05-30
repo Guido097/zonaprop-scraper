@@ -30,7 +30,7 @@ Este proyecto realiza un scraping avanzado de departamentos en alquiler en Córd
 - **Métricas clave**: Precio promedio, precio por m², distribución por características
 - **Filtros dinámicos**: Por barrio, rango de precios, tamaño y características
 
-![Dashboard Preview](Analisis_precios_alquileres_Cordoba.jpeg)
+![Dashboard Preview](BI/Analisis_precios_alquileres_Cordoba.jpeg)
 
 **Características del Dashboard:**
 - 📈 **KPIs principales**: Precio promedio, cantidad de propiedades, precio por m²
