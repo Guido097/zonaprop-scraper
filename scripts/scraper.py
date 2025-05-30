@@ -316,6 +316,7 @@ def scrape_zonaprop(pages=2):
                 # Esperar el tiempo restante
                 remaining_time = total_delay % 10
                 time.sleep(remaining_time)
+                driver.__del__ = lambda: None
 
         return pd.DataFrame(results)
     
