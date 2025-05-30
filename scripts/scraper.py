@@ -225,6 +225,7 @@ def scrape_zonaprop(pages=2):
                     location = "Sin ubicación"
                     features = "Sin características"
                     description = "Sin descripción"
+                    address = "Sin dirección"
                     
                     try:
                         price_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_PRICE"]')
@@ -255,8 +256,32 @@ def scrape_zonaprop(pages=2):
                     except:
                         pass
                     
+                    # Extraer dirección usando múltiples selectores
+                    try:
+                        # Intentar con diferentes selectores para la dirección
+                        address_selectors = [
+                            'div.postingCard-module__posting-top > div:nth-child(1) > div:nth-child(2) > div > div',
+                            '[data-qa*="ADDRESS"]',
+                            '[class*="address"]',
+                            '.posting-address',
+                            'div[class*="posting-top"] div:nth-child(2) div',
+                            'div:nth-child(2) > div > div'  # Selector más simple y robusto
+                        ]
+                        
+                        for selector in address_selectors:
+                            try:
+                                address_element = card.find_element(By.CSS_SELECTOR, selector)
+                                if address_element and address_element.text.strip():
+                                    address = address_element.text.strip()
+                                    break
+                            except:
+                                continue
+                    except:
+                        pass
+                    
                     results.append({
-                        "titulo": features,
+                        "titulo": address,  # Ahora título es la dirección
+                        "caracteristicas": features,  # Las características van en un campo separado
                         "precio": price,
                         "descripcion": description,
                         "ubicacion": location,
