@@ -4,3 +4,5 @@ pandas
 selenium
 webdriver-manager
 ipykernel
+matplotlib
+seaborn
