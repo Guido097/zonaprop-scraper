@@ -23,10 +23,49 @@ Este proyecto realiza un scraping avanzado de departamentos en alquiler en Córd
 - **Análisis geográfico**: Separación de barrios y ciudades
 - **Validación de datos**: Manejo de valores faltantes y errores
 
-### 📈 Análisis Exploratorio
-- **EDA completo**: Jupyter notebook con análisis detallado
-- **Visualizaciones**: Distribuciones de precios, características y ubicaciones
-- **Insights**: Correlaciones y patrones del mercado inmobiliario
+### 📊 Dashboard Business Intelligence
+- **Power BI Dashboard**: Análisis interactivo completo del mercado de alquileres
+- **Visualizaciones avanzadas**: KPIs, métricas de tendencias y comparativas por barrio
+- **Análisis geográfico**: Mapas de calor de precios y distribución de propiedades
+- **Métricas clave**: Precio promedio, precio por m², distribución por características
+- **Filtros dinámicos**: Por barrio, rango de precios, tamaño y características
+
+![Dashboard Preview](Analisis_precios_alquileres_Cordoba.jpeg)
+
+**Características del Dashboard:**
+- 📈 **KPIs principales**: Precio promedio, cantidad de propiedades, precio por m²
+- 🗺️ **Análisis geográfico**: Distribución de precios por barrio
+- 📊 **Gráficos comparativos**: Precios vs características (ambientes, m², dormitorios)
+- 🎯 **Filtros interactivos**: Segmentación por múltiples criterios
+- 📱 **Responsive**: Optimizado para diferentes dispositivos
+
+### 📈 Análisis Disponibles
+
+### 📊 Dashboard Power BI Interactivo
+- **KPIs principales**: Métricas clave del mercado inmobiliario
+- **Análisis geográfico**: Distribución de precios y propiedades por barrio
+- **Visualizaciones dinámicas**: Gráficos interactivos con filtros
+- **Comparativas**: Análisis por características (ambientes, m², dormitorios)
+- **Tendencias**: Insights del mercado de alquileres en Córdoba
+
+### 📈 Análisis Estadístico (Jupyter)
+- **Estadísticas descriptivas**: Distribución de precios por barrio
+- **Características promedio**: Análisis de propiedades típicas
+- **Precio por metro cuadrado**: Análisis de eficiencia de precios
+- **Correlaciones**: Relaciones entre variables del mercado
+
+### 📊 Visualizaciones Disponibles
+- **Dashboard interactivo**: Power BI con filtros dinámicos
+- **Histogramas**: Distribución de precios y características
+- **Box plots**: Comparativas por ubicación
+- **Mapas de calor**: Correlaciones entre variables
+- **Gráficos de barras**: Análisis por categorías
+
+### 💡 Insights del Mercado
+- **Barrios premium vs. accesibles**: Análisis comparativo de precios
+- **Relación precio-tamaño**: Eficiencia por zona geográfica
+- **Tendencias por características**: Preferencias del mercado
+- **Oportunidades de inversión**: Identificación de zonas con mejor relación precio-valor
 
 ## 🛠️ Tecnologías
 
@@ -41,6 +80,12 @@ Este proyecto realiza un scraping avanzado de departamentos en alquiler en Córd
 - **NumPy** (cálculos numéricos)
 - **Matplotlib & Seaborn** (visualizaciones)
 - **Jupyter Notebooks** (análisis interactivo)
+- **Microsoft Power BI** (dashboard interactivo de BI)
+
+### Business Intelligence
+- **Microsoft Power BI Desktop** (creación de dashboards)
+- **Archivos .pbix** (dashboards interactivos)
+- **Conectores de datos** (CSV, Excel, bases de datos)
 
 ## 📁 Estructura del Proyecto
 
@@ -51,13 +96,16 @@ zonaprop-scraper/
 │   ├── data_cleaning.ipynb     # Notebook de limpieza de datos
 │   └── test_cleaning.py        # Script de prueba de limpieza
 ├── 📂 notebooks/
-│   ├── EDA_actualizado.ipynb   # Análisis exploratorio actualizado
 │   └── EDA.ipynb              # EDA anterior (referencia)
 ├── 📂 data/
 │   ├── zonaprop_raw.csv       # Datos sin procesar
 │   └── zonaprop_clean.csv     # Datos procesados y limpios
+├── 📊 Dashboard Business Intelligence/
+│   ├── Analisis_precio_alquileres_cordoba_argentina.pbix  # Dashboard Power BI
+│   └── Analisis_precios_alquileres_Cordoba.jpeg          # Captura del dashboard
 ├── 📂 zp_scrapper/            # Entorno virtual
 ├── requirements.txt           # Dependencias del proyecto
+├── test_cleaning.py          # Script de limpieza y testing
 └── README.md                 # Este archivo
 ```
 
@@ -102,6 +150,17 @@ python test_cleaning.py
 ```bash
 # Abrir Jupyter Notebook
 jupyter notebook notebooks/EDA_actualizado.ipynb
+```
+
+### 6. Dashboard Business Intelligence
+```bash
+# Para visualizar el dashboard de Power BI:
+# 1. Abrir Power BI Desktop (requiere instalación separada)
+# 2. Abrir el archivo: Analisis_precio_alquileres_cordoba_argentina.pbix
+# 3. Actualizar fuente de datos si es necesario (data/zonaprop_clean.csv)
+
+# O simplemente visualizar la captura del dashboard:
+# - Analisis_precios_alquileres_Cordoba.jpeg
 ```
 
 ## 🎯 Configuración Específica

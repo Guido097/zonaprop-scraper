@@ -1,8 +1,23 @@
-beautifulsoup4
-requests
-pandas
-selenium
-webdriver-manager
-ipykernel
-matplotlib
-seaborn
+# ===== SCRAPING Y AUTOMATIZACIÓN =====
+selenium>=4.15.0
+undetected-chromedriver>=3.5.4
+webdriver-manager>=4.0.1
+fake-useragent>=1.4.0
+setuptools>=68.0.0
+
+# ===== ANÁLISIS DE DATOS =====
+pandas>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# ===== UTILIDADES ADICIONALES =====
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# ===== COMPATIBILIDAD =====
+# Para evitar conflictos con versiones de Python más recientes
+distutils-extra>=2.39
