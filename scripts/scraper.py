@@ -1,192 +1,329 @@
 # scripts/scraper.py
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 import time
 import random
+import json
 
-options = Options()
-# Comentamos headless para debuggear, luego lo podemos reactivar
-# options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--window-size=1920,1080")
-# User agent más convincente
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--disable-extensions")
-options.add_argument("--disable-logging")
-options.add_argument("--log-level=3")
-options.add_argument("--silent")
-options.add_argument("--disable-web-security")
-options.add_argument("--disable-features=VizDisplayCompositor")
-# Opciones adicionales para evitar detección
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_experimental_option('useAutomationExtension', False)
+# Lista manual de user agents como fallback
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+]
 
-# Usar Service en lugar de executable_path
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=options)
+# Intentar importar fake-useragent, usar fallback si falla
+try:
+    from fake_useragent import UserAgent
+    ua = UserAgent()
+    print("✅ Fake UserAgent cargado correctamente")
+except ImportError:
+    print("⚠️ Fake UserAgent no disponible, usando lista manual")
+    ua = None
 
-# Ejecutar script para ocultar que es un bot
-driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+def get_random_user_agent():
+    """Obtener user agent aleatorio"""
+    if ua:
+        try:
+            return ua.random
+        except:
+            pass
+    return random.choice(USER_AGENTS)
 
-def wait_for_page_load(driver, max_attempts=3):
-    """Espera a que la página cargue completamente y maneja verificaciones"""
-    for attempt in range(max_attempts):
-        time.sleep(random.uniform(3, 7))  # Delay aleatorio entre 3-7 segundos
-        
-        title = driver.title.lower()
-        if "un momento" in title or "verificando" in title or "cloudflare" in title:
-            print(f"Detectada página de verificación (intento {attempt + 1}). Esperando...")
-            time.sleep(random.uniform(5, 10))  # Espera más tiempo para verificaciones
-        else:
-            break
+def create_stealthy_driver():
+    """Crear un driver con máxima protección anti-detección"""
+    print("🔧 Configurando driver anti-detección...")
     
-    return driver.title
+    options = uc.ChromeOptions()
+    
+    # User agent aleatorio realista
+    user_agent = get_random_user_agent()
+    options.add_argument(f"user-agent={user_agent}")
+    print(f"🎭 Usando User Agent: {user_agent[:50]}...")
+    
+    # Configuraciones básicas anti-detección (solo las compatibles)
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--window-size=1366,768")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--disable-features=VizDisplayCompositor")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    
+    # Preferencias básicas del navegador
+    prefs = {
+        "profile.default_content_setting_values": {
+            "notifications": 2,
+            "geolocation": 2,
+            "media_stream": 2,
+        }
+    }
+    options.add_experimental_option("prefs", prefs)
+    
+    print("🚀 Iniciando Chrome...")
+    # Crear driver con undetected-chromedriver
+    driver = uc.Chrome(options=options, version_main=None)
+    
+    # Scripts adicionales anti-detección
+    try:
+        driver.execute_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined,
+            });
+        """)
+        print("✅ Scripts anti-detección inyectados")
+    except Exception as e:
+        print(f"⚠️ No se pudieron inyectar scripts anti-detección: {e}")
+    
+    return driver
+
+def human_like_scroll(driver):
+    """Simular scroll humano"""
+    try:
+        scroll_pause_time = random.uniform(0.5, 2.0)
+        
+        # Scroll gradual hacia abajo
+        for i in range(3):
+            driver.execute_script(f"window.scrollTo(0, {300 * (i + 1)});")
+            time.sleep(scroll_pause_time)
+        
+        # Scroll un poco hacia arriba (comportamiento humano)
+        driver.execute_script("window.scrollTo(0, 200);")
+        time.sleep(scroll_pause_time)
+    except Exception as e:
+        print(f"⚠️ Error en scroll: {e}")
+
+def wait_for_page_load_advanced(driver, max_attempts=5):
+    """Espera avanzada con múltiples verificaciones"""
+    for attempt in range(max_attempts):
+        # Delay aleatorio inicial
+        initial_delay = random.uniform(5, 12)
+        print(f"⏱️ Esperando {initial_delay:.1f} segundos para carga inicial...")
+        time.sleep(initial_delay)
+        
+        try:
+            title = driver.title.lower()
+            print(f"📄 Título detectado (intento {attempt + 1}): {driver.title}")
+            
+            # Verificar diferentes tipos de bloqueo
+            if any(keyword in title for keyword in ["un momento", "verificando", "cloudflare", "checking", "loading"]):
+                print(f"🛡️ Detectada página de verificación (intento {attempt + 1}). Esperando más tiempo...")
+                # Incrementar delay exponencialmente
+                verification_delay = random.uniform(15, 30) * (attempt + 1)
+                print(f"⏳ Esperando {verification_delay:.1f} segundos adicionales...")
+                time.sleep(verification_delay)
+                
+                # Simular actividad humana
+                try:
+                    human_like_scroll(driver)
+                except:
+                    pass
+            else:
+                print("✅ Página cargada correctamente")
+                break
+        except Exception as e:
+            print(f"⚠️ Error verificando título: {e}")
+            time.sleep(5)
+    
+    try:
+        return driver.title
+    except:
+        return "Error obteniendo título"
 
 def scrape_zonaprop(pages=2):
-    results = []
-    base_url = "https://www.zonaprop.com.ar/departamentos-alquiler-cordoba-cb-desde-1-hasta-2-habitaciones-mas-de-2-ambientes.html"
+    """Función principal de scraping con máxima protección anti-bot"""
+    print("🚀 Iniciando scraper avanzado anti-detección...")
     
-    print("Verificando la primera página para ver información de paginación...")
-    driver.get(base_url)
-    final_title = wait_for_page_load(driver)
-    print(f"Título de la primera página: {final_title}")
+    # Crear driver stealth
+    driver = create_stealthy_driver()
     
-    # Verificar si hay paginación en la primera página
     try:
-        pagination_elements = driver.find_elements(By.CSS_SELECTOR, '.pagination, .paging, [class*="pag"], [data-qa*="pag"]')
-        print(f"Elementos de paginación encontrados: {len(pagination_elements)}")
+        results = []
+        base_url = "https://www.zonaprop.com.ar/departamentos-alquiler-cordoba-cb-desde-1-hasta-2-habitaciones-mas-de-2-ambientes.html"
         
-        # Buscar números de página específicamente
-        page_numbers = driver.find_elements(By.CSS_SELECTOR, 'a[href*="pagina-"]')
-        if page_numbers:
-            print(f"Enlaces de página encontrados: {len(page_numbers)}")
-            max_page = 1
-            for link in page_numbers:
-                href = link.get_attribute('href')
-                if 'pagina-' in href:
-                    try:
-                        page_num = int(href.split('pagina-')[1].split('.')[0])
-                        max_page = max(max_page, page_num)
-                    except:
-                        continue
-            print(f"Máximo número de página detectado: {max_page}")
-        else:
-            print("No se encontraron enlaces de paginación - posiblemente solo hay 1 página")
-            max_page = 1
-    except Exception as e:
-        print(f"Error verificando paginación: {e}")
-        max_page = 1
-    
-    # Ajustar el número de páginas a scrapear
-    actual_pages = min(pages, max_page)
-    print(f"Scrapeando {actual_pages} página(s) en total")
-    
-    for page in range(1, actual_pages + 1):
-        print(f"\nScrapeando página {page}...")
-        if page == 1:
-            url = base_url
-            # Ya cargamos la página 1, no necesitamos cargarla de nuevo
-            if page > 1:
-                driver.get(url)
-                final_title = wait_for_page_load(driver)
-        else:
-            # Para páginas adicionales, agregamos el parámetro de página
-            url = f"https://www.zonaprop.com.ar/departamentos-alquiler-cordoba-cb-desde-1-hasta-2-habitaciones-mas-de-2-ambientes-pagina-{page}.html"
-            print(f"URL visitada: {url}")
-            driver.get(url)
-            final_title = wait_for_page_load(driver)
-            print(f"Título final de la página: {final_title}")
+        for page in range(1, pages + 1):
+            print(f"\n{'='*50}")
+            print(f"SCRAPEANDO PÁGINA {page}")
+            print(f"{'='*50}")
             
-            # Verificar si aún estamos en una página de verificación
-            if "un momento" in final_title.lower():
-                print(f"Página {page} sigue en verificación.")
-                # Intentar una estrategia diferente: recargar la página 1 y navegar desde ahí
-                print("Intentando navegar desde la página 1...")
-                driver.get(base_url)
-                wait_for_page_load(driver)
+            if page == 1:
+                url = base_url
+            else:
+                url = f"https://www.zonaprop.com.ar/departamentos-alquiler-cordoba-cb-desde-1-hasta-2-habitaciones-mas-de-2-ambientes-pagina-{page}.html"
+            
+            print(f"🌐 URL visitada: {url}")
+            
+            # Navegar con delay aleatorio
+            driver.get(url)
+            
+            # Espera avanzada para carga
+            final_title = wait_for_page_load_advanced(driver)
+            
+            # Verificar si seguimos bloqueados
+            if any(keyword in final_title.lower() for keyword in ["un momento", "verificando", "cloudflare"]):
+                print(f"⚠️ Página {page} sigue bloqueada después de múltiples intentos")
                 
-                # Buscar y hacer click en el enlace de la página específica
-                try:
-                    page_link = driver.find_element(By.CSS_SELECTOR, f'a[href*="pagina-{page}"]')
-                    driver.execute_script("arguments[0].click();", page_link)
-                    final_title = wait_for_page_load(driver)
-                    print(f"Después del click: {final_title}")
-                    if "un momento" in final_title.lower():
-                        print(f"Aún en verificación después del click, saltando página {page}")
-                        continue
-                except Exception as e:
-                    print(f"No se pudo hacer click en el enlace de la página {page}: {e}")
+                # Último intento: cambiar user agent y reintentar
+                if page > 1:  # Solo para páginas > 1
+                    print("🔄 Cambiando user agent y reintentando...")
+                    new_ua = get_random_user_agent()
+                    try:
+                        driver.execute_cdp_cmd('Network.setUserAgentOverride', {
+                            "userAgent": new_ua
+                        })
+                        print(f"🎭 Nuevo User Agent: {new_ua[:50]}...")
+                        
+                        driver.get(url)
+                        final_title = wait_for_page_load_advanced(driver, max_attempts=2)
+                    except Exception as e:
+                        print(f"⚠️ Error cambiando user agent: {e}")
+                
+                if any(keyword in final_title.lower() for keyword in ["un momento", "verificando", "cloudflare"]):
+                    print(f"❌ Saltando página {page} - No se pudo acceder")
                     continue
-        
-        # Verificar si hay algún mensaje de error o página no encontrada
-        page_source_sample = driver.page_source[:500]
-        if "404" in page_source_sample or "No encontrado" in page_source_sample:
-            print(f"Página {page} parece no existir")
-            break
+            
+            print(f"✅ Acceso exitoso a página {page}")
+            
+            # Simular comportamiento humano antes de extraer datos
+            human_like_scroll(driver)
+            
+            # Buscar propiedades
+            cards = driver.find_elements(By.CSS_SELECTOR, '[data-qa="posting PROPERTY"]')
+            print(f"🏠 Encontradas {len(cards)} propiedades en la página {page}")
+            
+            # Selector alternativo si no encuentra nada
+            if len(cards) == 0:
+                print("🔍 Probando selectores alternativos...")
+                alt_selectors = [
+                    '.posting-card',
+                    '[class*="posting"]',
+                    '[data-testid*="property"]',
+                    '.property-card'
+                ]
+                
+                for selector in alt_selectors:
+                    cards = driver.find_elements(By.CSS_SELECTOR, selector)
+                    if cards:
+                        print(f"✅ Selector alternativo '{selector}' encontró {len(cards)} elementos")
+                        break
 
-        # Usar los selectores correctos encontrados en el análisis
-        cards = driver.find_elements(By.CSS_SELECTOR, '[data-qa="posting PROPERTY"]')
-        print(f"Encontradas {len(cards)} propiedades en la página {page}")
-        
-        # Si no encontramos cards, intentemos con otros selectores alternativos
-        if len(cards) == 0:
-            print("No se encontraron cards con el selector principal, intentando selector alternativo...")
-            alt_cards = driver.find_elements(By.CSS_SELECTOR, '.posting-card')
-            print(f"Selector alternativo encontró: {len(alt_cards)} elementos")
-            if len(alt_cards) > 0:
-                cards = alt_cards
-
-        for card in cards:
-            try:
-                # Buscar precio
-                price_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_PRICE"]')
-                price = price_element.text.strip() if price_element else "Sin precio"
-                
-                # Buscar ubicación
-                location_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_LOCATION"]')
-                location = location_element.text.strip() if location_element else "Sin ubicación"
-                
-                # Buscar características (usar como título)
-                features_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_FEATURES"]')
-                features = features_element.text.strip() if features_element else "Sin características"
-                
-                # Buscar descripción
-                desc_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_DESCRIPTION"]')
-                if desc_element:
-                    # Intentar obtener el texto del enlace dentro de la descripción
-                    link_element = desc_element.find_element(By.TAG_NAME, "a")
-                    description = link_element.text.strip() if link_element else desc_element.text.strip()
-                else:
+            # Procesar cada propiedad
+            for i, card in enumerate(cards):
+                try:
+                    # Delay aleatorio entre extracciones para simular lectura humana
+                    if i > 0 and i % 5 == 0:  # Cada 5 propiedades
+                        read_delay = random.uniform(1, 3)
+                        time.sleep(read_delay)
+                    
+                    # Extraer datos con manejo robusto de errores
+                    price = "Sin precio"
+                    location = "Sin ubicación"
+                    features = "Sin características"
                     description = "Sin descripción"
-                
-                results.append({
-                    "titulo": features,  # Usamos las características como título
-                    "precio": price,
-                    "descripcion": description,
-                    "ubicacion": location
-                })
-                
-            except Exception as e:
-                print(f"Error procesando una tarjeta: {e}")
-                continue
-        
-        # Delay aleatorio entre páginas para simular comportamiento humano
-        if page < actual_pages:
-            delay = random.uniform(5, 10)  # Aumentamos el delay
-            print(f"Esperando {delay:.1f} segundos antes de la siguiente página...")
-            time.sleep(delay)
+                    
+                    try:
+                        price_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_PRICE"]')
+                        price = price_element.text.strip()
+                    except:
+                        pass
+                    
+                    try:
+                        location_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_LOCATION"]')
+                        location = location_element.text.strip()
+                    except:
+                        pass
+                    
+                    try:
+                        features_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_FEATURES"]')
+                        features = features_element.text.strip()
+                    except:
+                        pass
+                    
+                    try:
+                        desc_element = card.find_element(By.CSS_SELECTOR, '[data-qa="POSTING_CARD_DESCRIPTION"]')
+                        if desc_element:
+                            try:
+                                link_element = desc_element.find_element(By.TAG_NAME, "a")
+                                description = link_element.text.strip()
+                            except:
+                                description = desc_element.text.strip()
+                    except:
+                        pass
+                    
+                    results.append({
+                        "titulo": features,
+                        "precio": price,
+                        "descripcion": description,
+                        "ubicacion": location,
+                        "pagina": page
+                    })
+                    
+                except Exception as e:
+                    print(f"⚠️ Error procesando propiedad {i+1}: {e}")
+                    continue
 
-    return pd.DataFrame(results)
+            print(f"✅ Página {page} completada - {len([r for r in results if r['pagina'] == page])} propiedades extraídas")
+            
+            # Delay largo y aleatorio entre páginas
+            if page < pages:
+                # Base 20-35 segundos + random adicional
+                base_delay = random.uniform(20, 35)
+                extra_delay = random.uniform(0, 15)
+                total_delay = base_delay + extra_delay
+                
+                print(f"⏳ Esperando {total_delay:.1f} segundos antes de la página {page + 1}...")
+                print("💭 Simulando comportamiento humano...")
+                
+                # Durante la espera, simular actividad ocasional
+                for wait_chunk in range(int(total_delay // 10)):
+                    time.sleep(10)
+                    if random.random() < 0.3:  # 30% chance de actividad
+                        try:
+                            driver.execute_script("window.scrollTo(0, Math.random() * 500);")
+                        except:
+                            pass
+                
+                # Esperar el tiempo restante
+                remaining_time = total_delay % 10
+                time.sleep(remaining_time)
+
+        return pd.DataFrame(results)
+    
+    except Exception as e:
+        print(f"❌ Error general: {e}")
+        return pd.DataFrame()
+    
+    finally:
+        print("\n🔚 Cerrando navegador...")
+        try:
+            driver.quit()
+        except:
+            pass
 
 if __name__ == "__main__":
-    df = scrape_zonaprop(pages=5)
-    df.to_csv("data/zonaprop_raw.csv", index=False, encoding="utf-8")
-    print("Datos guardados en data/zonaprop_raw.csv")
-    driver.quit()
+    try:
+        print("🚀 Iniciando scraper avanzado anti-detección...")
+        df = scrape_zonaprop(pages=5)
+        
+        if not df.empty:
+            df.to_csv("data/zonaprop_raw.csv", index=False, encoding="utf-8")
+            print(f"✅ Datos guardados en data/zonaprop_raw.csv")
+            print(f"📊 Total de propiedades extraídas: {len(df)}")
+            print(f"📄 Propiedades por página:")
+            for page in sorted(df['pagina'].unique()):
+                count = len(df[df['pagina'] == page])
+                print(f"   Página {page}: {count} propiedades")
+        else:
+            print("❌ No se pudieron extraer datos")
+        
+        print("🎉 Proceso completado")
+    
+    except Exception as e:
+        print(f"❌ Error fatal: {e}")
+        import traceback
+        traceback.print_exc()
