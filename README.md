@@ -100,7 +100,7 @@ zonaprop-scraper/
 ├── 📂 data/
 │   ├── zonaprop_raw.csv       # Datos sin procesar
 │   └── zonaprop_clean.csv     # Datos procesados y limpios
-├── 📊 Dashboard Business Intelligence/
+├── 📊 BI/
 │   ├── Analisis_precio_alquileres_cordoba_argentina.pbix  # Dashboard Power BI
 │   └── Analisis_precios_alquileres_Cordoba.jpeg          # Captura del dashboard
 ├── 📂 zp_scrapper/            # Entorno virtual
